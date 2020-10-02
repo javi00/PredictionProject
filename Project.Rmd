@@ -2,20 +2,110 @@
 title: "Prediction"
 output: html_document
 ---
+## Summary
 
-## R Markdown
-```{r setup, include=FALSE}
 
+## Data source 
+
+You can download the training [data](https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv).
+
+The test [data](https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv).
+
+
+
+## Exploraty Analysis
+ 
+```{r}
+# Load the libraries that we need 
+library(caret)
+library(rpart)
+library(ggplot2)
+library(rpart.plot)
+library(rattle)
+library(randomForest)
+library(corrplot)
+set.seed(1234)  # the random sequence 
+
+# datasets
+
+training <- read.csv("pml-training.csv")
+testing  <- read.csv("pml-testing.csv")
+
+# create a partition with the training dataset 
+inTrain  <- createDataPartition(training$classe, p=0.7, list=FALSE)
+TrainSet <- training[inTrain, ]
+TestSet  <- training[-inTrain, ]
 ```
 
-## R Markdown
+# Cleaning the data
+
+```{r}
+# Remove variables with Nearly Zero Variance
+NZV <- nearZeroVar(TrainSet)
+TrainSet <- TrainSet[, -NZV]
+TestSet  <- TestSet[, -NZV]
+
+# remove variables that are mostly NA
+AllNA    <- sapply(TrainSet, function(x) mean(is.na(x))) > 0.95
+TrainSet <- TrainSet[, AllNA==FALSE]
+TestSet  <- TestSet[, AllNA==FALSE]
+
+# remove identification only variables (columns 1 to 5)
+TrainSet <- TrainSet[, -(1:5)]
+TestSet  <- TestSet[, -(1:5)]
+
+# Data Training 
+print(dim(TrainSet))
+# Data Test
+print(dim(TestSet))
+```
+
+# Correlation 
+
+```{r}
+corMatrix <- cor(TrainSet[, -54])
+corrplot(corMatrix, order = "FPC", method = "color", type = "lower", 
+         tl.cex = 0.8, tl.col = rgb(0, 0, 0))
+```
+The highly correlated variables are shown in dark colors in the graph above. Their colors are either dark blue (for a positive correlation) or dark red (for a negative correlations) 
+
+
+# Prediction Model
+
+## Decision Tree Model
+```{r}
+fit_decision_tree <- rpart(classe ~ ., data = TrainSet, method="class")
+fancyRpartPlot(fit_decision_tree)
+
+```
+Predictions of the decision tree model on TestSet.
+
 ```{r}
 
+predict_decision_tree <- predict(fit_decision_tree, newdata = TestSet, type="class")
+conf_matrix_decision_tree <- confusionMatrix(predict_decision_tree, TestSet$classe)
+
+conf_matrix_decision_tree
 ```
 
-## Including Plots
+
+# Correlation 
 
 ```{r}
 
+
 ```
 
+# Correlation 
+
+```{r}
+
+
+```
+
+# Correlation 
+
+```{r}
+
+
+```
